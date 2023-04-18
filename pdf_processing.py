@@ -22,9 +22,11 @@ file_num = 1
 
 for file in file_set:
     print(f"Starting file {file_num}/{len(file_set)}...", file)
+    # noinspection PyUnresolvedReferences
     with fitz.open(file) as pdf:
         for page in pdf:
             pix = page.get_pixmap()  # render page to an image
+            # noinspection PyProtectedMember
             name = os.path.join(image_folder, fich._get_name(page_num, "page", ".png"))
             pix.save(name)  # store image as a PNG
             page_num = page_num + 1
