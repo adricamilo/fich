@@ -20,7 +20,7 @@ def _is_image(path: str) -> bool:
     return has_image_format and not_garbage
 
 
-def get_image_paths(folder, alphabetic: bool = True) -> list:
+def get_image_paths(folder, alphabetic: bool = True) -> list[str]:
     images = []
     for file in os.listdir(folder):
         path = os.path.join(folder, file)
@@ -88,11 +88,32 @@ def pil_list_to_pdf(images: list[Image.Image], path: str) -> str:
     return filename
 
 
-def load_cv2_list(images: list) -> list[ndarray]:
+def rotate_cv2_list(images: list[ndarray], degrees: int) -> list[ndarray]:
+    degrees = degrees % 360
+
+    if degrees == 0:
+        return images
+
+    rotations = {
+        90: cv2.ROTATE_90_COUNTERCLOCKWISE,
+        180: cv2.ROTATE_180,
+        270: cv2.ROTATE_90_CLOCKWISE
+    }
+
+    try:
+        images = [cv2.rotate(image, rotations[degrees]) for image in images]
+    except KeyError:
+        raise ValueError("degrees must be 0, 90, 180 or 270.")
+
+    return images
+
+
+def load_cv2_list(images: list, degrees: int = 0) -> list[ndarray]:
     # Loads image in BGR format by default
     loaded = [cv2.imread(image) for image in images]
+    rotated = rotate_cv2_list(loaded, degrees)
 
-    return loaded
+    return rotated
 
 
 def _gaussian_filter(image: ndarray, block_size: int, c: int) -> ndarray:
