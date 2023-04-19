@@ -32,6 +32,12 @@ dataset_train, dataset_test = torch.utils.data.random_split(
     [8/10, 2/10],
     g_cpu
 )
+N = len(dataset_train)
+reduct = 8
+print(f"Full training dataset size: {N}")
+indices = range(0, N, reduct)
+dataset_train = torch.utils.data.Subset(dataset_train, torch.tensor(indices))
+print(f"Training dataset size reduced by a factor of {reduct}")
 # Se puede decirle que cambie el tamaño de las imágenes
 # Solamente es un procedimiento para lectura de archivos, las imágenes no se han cargado
 # noinspection PyUnresolvedReferences
@@ -78,20 +84,23 @@ class Net(nn.Module):
             nn.Dropout(p=0.25)
         )
 
+        # Flattening
+        self.flatten = nn.Flatten()
+
         # Red per se
         self.linear_layers = nn.Sequential(
             nn.Linear(512 * 100, 512),
-            nn.Linear(512, 3),
-            nn.Softmax(dim=1)
+            nn.Linear(512, 3)
         )
 
-        # Flattening
-        self.flatten = nn.Flatten()
+        # SoftMax
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         x = self.conv_layers(x)
         x = self.flatten(x)
         x = self.linear_layers(x)
+        x = self.softmax(x)
         return x
 
 
@@ -126,7 +135,7 @@ for epoch in range(num_epochs):
         accuracy = correct / total
 
         # Imprimir estadísticas de entrenamiento
-        if (i + 1) % 39 == 0:
+        if (i + 1) % 7 == 0:
             # len(dataloader) = numero de archivos / batch_size
             print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%'
                   .format(epoch + 1, num_epochs, i + 1, len(dataloader_train), loss.item(), accuracy * 100))
