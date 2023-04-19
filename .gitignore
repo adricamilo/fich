@@ -1,5 +1,9 @@
-# Training and testing database
+# Robocopy and rsync stuff
+robolog.txt
+
+# Training and testing databases
 fich_database/
+inputsPNG/
 
 # MacOS stuff
 .DS_Store

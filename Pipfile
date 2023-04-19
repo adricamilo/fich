@@ -17,6 +17,7 @@ pdf2image = "*"
 unidecode = "*"
 pymupdf = "*"
 pypdf = "*"
+jupyter = "*"
 
 [dev-packages]
 

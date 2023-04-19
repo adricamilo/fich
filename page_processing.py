@@ -38,6 +38,6 @@ for orient, im_list in input_lists.items():
     im_counter = 0
     for im in cv2_list:
         folder = os.path.join(input_folder, to_words[orient])
-        cv2.imwrite(os.path.join(folder, fich._get_name(im_counter, "image", ".png")), im)
+        cv2.imwrite(os.path.join(folder, fich._get_name(im_counter, "image", ".jpg")), im)
         im_counter = im_counter + 1
     print(f"Finished {to_words[orient]} folder")
