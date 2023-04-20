@@ -21,7 +21,8 @@ print("Copied data")
 
 transformation = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Resize((400, 400), antialias=True)
+    transforms.CenterCrop(1000),
+    transforms.Resize(400, antialias=True)
 ])
 # Solamente lee la estructura en clases de la base de datos
 g_cpu = torch.Generator()
@@ -32,12 +33,12 @@ dataset_train, dataset_test = torch.utils.data.random_split(
     [8/10, 2/10],
     g_cpu
 )
-N = len(dataset_train)
-reduct = 8
-print(f"Full training dataset size: {N}")
-indices = range(0, N, reduct)
-dataset_train = torch.utils.data.Subset(dataset_train, torch.tensor(indices))
-print(f"Training dataset size reduced by a factor of {reduct}")
+# N = len(dataset_train)
+# reduct = 8
+# print(f"Full training dataset size: {N}")
+# indices = range(0, N, reduct)
+# dataset_train = torch.utils.data.Subset(dataset_train, torch.tensor(indices))
+# print(f"Training dataset size reduced by a factor of {reduct}")
 # Se puede decirle que cambie el tamaño de las imágenes
 # Solamente es un procedimiento para lectura de archivos, las imágenes no se han cargado
 # noinspection PyUnresolvedReferences
@@ -113,7 +114,7 @@ num_epochs = 10
 model = Net()
 # Criterio de clasificación
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)  # Modelo original usa RMSprop
+optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)  # Modelo original usa RMSprop
 
 accuracies = []
 model.train()
@@ -135,7 +136,7 @@ for epoch in range(num_epochs):
         accuracy = correct / total
 
         # Imprimir estadísticas de entrenamiento
-        if (i + 1) % 7 == 0:
+        if (i + 1) % 39 == 0:
             # len(dataloader) = numero de archivos / batch_size
             print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%'
                   .format(epoch + 1, num_epochs, i + 1, len(dataloader_train), loss.item(), accuracy * 100))
@@ -145,8 +146,8 @@ print("Training finished")
 
 print("Saving model and optimizer states...")
 
-model_name = fich._save_name("fich_database", "modelADAM", ".pt")
-optim_name = fich._save_name("fich_database", "optimADAM", ".pt")
+model_name = fich._save_name("fich_database", "model", ".pt")
+optim_name = fich._save_name("fich_database", "optim", ".pt")
 
 torch.save(model.state_dict(), model_name)
 torch.save(optimizer.state_dict(), optim_name)
@@ -157,7 +158,7 @@ print(f"Saved to {model_name} and {optim_name}!")
 # plt.ylabel("Accuracy")
 # plt.plot(accuracies)
 
-log_name = fich._save_name("fich_database", "training_accuraciesADAM", ".txt")
+log_name = fich._save_name("fich_database", "training_accuracies", ".txt")
 print(f"Writing training accuracy logs to {log_name}...")
 with open(log_name, "w") as f:
     for acc in accuracies:
