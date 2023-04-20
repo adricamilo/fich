@@ -1,10 +1,9 @@
-import os.path
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
-import matplotlib.pyplot as plt
 import tempfile
 import shutil
 import fich
@@ -19,10 +18,20 @@ print(f"Copying data from {data_dir}...")
 shutil.copytree(data_dir, tmp_datos)
 print("Copied data")
 
+
+def resize(image):
+    size = torch.tensor(transforms.functional.get_image_size(image))
+    if all(size >= 400) and any(size <= 600):
+        return image
+    new_size = (size * torch.ceil(600 / torch.min(size))).int().tolist()
+    t = transforms.Resize(new_size, antialias=True)
+    return t(image)
+
+
 transformation = transforms.Compose([
     transforms.ToTensor(),
-    transforms.CenterCrop(1000),
-    transforms.Resize(400, antialias=True)
+    transforms.Lambda(resize),
+    transforms.CenterCrop(400)
 ])
 # Solamente lee la estructura en clases de la base de datos
 g_cpu = torch.Generator()
@@ -106,7 +115,7 @@ class Net(nn.Module):
 
 
 # Definir los hiperparámetros
-learning_rate = 0.001
+learning_rate = 0.01
 batch_size = 32
 num_epochs = 10
 
@@ -132,11 +141,12 @@ for epoch in range(num_epochs):
         # Calcular la precisión de entrenamiento
         total = labels.size(0)
         _, predicted = torch.max(outputs.data, 1)
+        # noinspection PyUnresolvedReferences
         correct = (predicted == labels).sum().item()
         accuracy = correct / total
 
         # Imprimir estadísticas de entrenamiento
-        if (i + 1) % 39 == 0:
+        if (i + 1) % 29 == 0:
             # len(dataloader) = numero de archivos / batch_size
             print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%'
                   .format(epoch + 1, num_epochs, i + 1, len(dataloader_train), loss.item(), accuracy * 100))
@@ -152,11 +162,6 @@ optim_name = fich._save_name("fich_database", "optim", ".pt")
 torch.save(model.state_dict(), model_name)
 torch.save(optimizer.state_dict(), optim_name)
 print(f"Saved to {model_name} and {optim_name}!")
-
-# plt.ylim([0, 1])
-# plt.xlabel("Time")
-# plt.ylabel("Accuracy")
-# plt.plot(accuracies)
 
 log_name = fich._save_name("fich_database", "training_accuracies", ".txt")
 print(f"Writing training accuracy logs to {log_name}...")
@@ -175,6 +180,7 @@ with torch.no_grad():
         outputs = model(images)
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
+        # noinspection PyUnresolvedReferences
         correct += (predicted == labels).sum().item()
     print("Test accuracy: {:.2f}%".format(correct / total * 100))
 
