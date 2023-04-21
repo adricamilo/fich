@@ -20,6 +20,7 @@ print("Copied data")
 
 
 def resize(image):
+    # noinspection PyUnresolvedReferences
     size = torch.tensor(transforms.functional.get_image_size(image))
     if all(size >= 400) and any(size <= 600):
         return image
@@ -31,7 +32,7 @@ def resize(image):
 transformation = transforms.Compose([
     transforms.ToTensor(),
     transforms.Lambda(resize),
-    transforms.CenterCrop(400)
+    transforms.RandomCrop(400)
 ])
 # Solamente lee la estructura en clases de la base de datos
 g_cpu = torch.Generator()

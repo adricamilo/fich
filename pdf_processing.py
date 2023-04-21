@@ -13,22 +13,25 @@ for dir_, _, files in os.walk(pdf_folder):
 
 file_list.sort()
 
-print(len(file_list))
-
 image_folder = os.path.join("fich_database", "images")
 
 page_num = 0
 file_num = 1
 
+f = open("pages_log.txt", "w")
+
 for file in file_list:
-    print(f"Starting file {file_num}/{len(file_list)}...", file)
+    f.write(f"Starting file {file_num}/{len(file_list)}..." + file + "\n")
     # noinspection PyUnresolvedReferences
     with fitz.open(file) as pdf:
         for page in pdf:
-            pix = page.get_pixmap()  # render page to an image
+            # pix = page.get_pixmap()  # render page to an image
             # noinspection PyProtectedMember
-            name = os.path.join(image_folder, fich._get_name(page_num, "page", ".png"))
-            pix.save(name)  # store image as a PNG
+            # name = os.path.join(image_folder, fich._get_name(page_num, "page", ".png"))
+            # pix.save(name)  # store image as a PNG
+            f.write(str(page_num) + "\n")
             page_num = page_num + 1
-    print(f"Completed file {file_num}/{len(file_list)}")
+    f.write(f"Completed file {file_num}/{len(file_list)}" + "\n")
     file_num = file_num + 1
+
+f.close()
