@@ -3,7 +3,7 @@ robolog.txt
 
 # Training and testing databases
 fich_database/
-inputsPNG/
+training_logs/
 
 # MacOS stuff
 .DS_Store

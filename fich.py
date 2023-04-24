@@ -30,9 +30,7 @@ def get_image_paths(folder, alphabetic: bool = True) -> list[str]:
     if alphabetic:
         images.sort()
 
-    images = [os.path.join(folder, image) for image in images]
-
-    return images
+    return [os.path.join(folder, image) for image in images]
 
 
 def rotate_pil_list(images: list[Image.Image], degrees: int) -> list[Image.Image]:
@@ -57,9 +55,8 @@ def rotate_pil_list(images: list[Image.Image], degrees: int) -> list[Image.Image
 
 def load_pil_list(images: list, degrees: int = 0) -> list[Image.Image]:
     loaded = [Image.open(image) for image in images]
-    rotated = rotate_pil_list(loaded, degrees)
 
-    return rotated
+    return rotate_pil_list(loaded, degrees)
 
 
 def _get_name(counter: int, name: str, extension: str) -> str:
@@ -111,9 +108,8 @@ def rotate_cv2_list(images: list[ndarray], degrees: int) -> list[ndarray]:
 def load_cv2_list(images: list, degrees: int = 0) -> list[ndarray]:
     # Loads image in BGR format by default
     loaded = [cv2.imread(image) for image in images]
-    rotated = rotate_cv2_list(loaded, degrees)
 
-    return rotated
+    return rotate_cv2_list(loaded, degrees)
 
 
 def _gaussian_filter(image: ndarray, block_size: int, c: int) -> ndarray:
