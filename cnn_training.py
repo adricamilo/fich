@@ -5,29 +5,24 @@ import torch
 import torch.optim as optim
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
-import tempfile
-import shutil
 from fich import _save_name as get_name
 import cnn_model
 
 # Arguments: learning rate, transformation (1-3), reduction factor
 
-# Path to labeled database
-data_dir = os.path.join("fich_database", "inputs_scanned")
+device = cnn_model.device
 
-print("Creating temporary directory for training...")
-tmp_dir = tempfile.TemporaryDirectory()
-tmp_datos = os.path.join(tmp_dir.name, "datos")
-print(f"Created {tmp_datos}...")
-print(f"Copying data from {data_dir}...")
-shutil.copytree(data_dir, tmp_datos)
+print(f"Using {device if device != 'cuda' else 'ROCm'} device")
+
+# Path to labeled database
+input_folder = os.path.join("fich_database", "inputs_scanned")
 
 # Define data augmentation transforms
 transform_train = {
     '1': [transforms.Compose([
         transforms.ToTensor(),
         transforms.RandomResizedCrop(400, ratio=(0.4, 1.0), antialias=True),
-        transforms.RandomAffine(degrees=15, translate=(0.1, 0.1), scale=(0.8, 1.2), shear=15)
+        transforms.RandomAffine(degrees=15, translate=(0.1, 0.1), scale=(0.9, 1.1), shear=15)
     ]), "RandomResizedCrop, RandomAffine"],
     '2': [transforms.Compose([
         transforms.ToTensor(),
@@ -38,8 +33,8 @@ transform_train = {
         transforms.Resize((400, 400), antialias=True)
     ]), "Resize"]
 }
-print("Loading data...")
-dataset = datasets.ImageFolder(tmp_datos, transform_train[sys.argv[2]][0])
+print(f"Loading data from {input_folder}...")
+dataset = datasets.ImageFolder(input_folder, transform_train[sys.argv[2]][0])
 N = len(dataset)
 print(f"Full training dataset size: {N}")
 factor = int(sys.argv[3])
@@ -57,48 +52,31 @@ num_epochs = 10
 
 # Model, loss function and optimizer
 model = cnn_model.model
-criterion = cnn_model.criterion
+print(model)
+loss_fn = cnn_model.loss_fn
 cnn_model.set_optimizer(learning_rate)
 optimizer = cnn_model.optimizer
 # Define the learning rate scheduler
-lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, patience=2, verbose=True)
+lr_scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.01, patience=2, verbose=True)
 
+accuracies = list()
 start = timer()
-accuracies = []
-model.train()
 print("Training started...")
 
-for epoch in range(num_epochs):
-    # len(dataloader) = numero de archivos / batch_size
-    N = len(dataloader) // 3
-    for i, (images, labels) in enumerate(dataloader):
-        optimizer.zero_grad()
-        outputs = model(images)
-        loss = criterion(outputs, labels)
-        loss.backward()
-        optimizer.step()
-
-        # Print training statistics
-        if (i + 1) % N == 0:
-            # Calcular la precisión de entrenamiento
-            total = labels.size(0)
-            _, predicted = torch.max(outputs.data, 1)
-            # noinspection PyUnresolvedReferences
-            correct = (predicted == labels).sum().item()
-            accuracy = correct / total
-            batch_log = "Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%".format(
-                epoch + 1,num_epochs, i + 1, len(dataloader), loss.item(), accuracy * 100)
-            print(batch_log)
-            accuracies.append(batch_log)
-    # noinspection PyUnboundLocalVariable
-    lr_scheduler.step(loss)  # Update the learning rate
-
+for t in range(num_epochs):
+    print(f"Epoch {t+1}\n-------------------------------")
+    cnn_model.train_loop(dataloader, model, loss_fn, optimizer, lr_scheduler)
+    correct = cnn_model.test_loop(dataloader, model, loss_fn)
+    accuracies.append(correct)
 
 finish = timer()
 print("Done!")
 execution_time = finish - start
 
 print("Saving model and optimizer states...")
+
+if not os.path.exists("training_logs/"):
+    os.makedirs("training_logs/")
 
 model_name = get_name("training_logs", "model", ".pt")
 optim_name = get_name("training_logs", "optim", ".pt")
@@ -118,5 +96,4 @@ for acc in accuracies:
     log_file.write(acc + "\n")
 log_file.close()
 
-print("Cleaning up...")
-tmp_dir.cleanup()
+print("Finished.")
