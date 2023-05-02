@@ -3,16 +3,16 @@ import torch.optim
 
 
 class CNNModel(torch.nn.Module):
-    def __init__(self, num_classes=3):
+    def __init__(self):
         super(CNNModel, self).__init__()
 
         # Convolutional layers
         self.conv_layers = torch.nn.Sequential(
-            torch.nn.Conv2d(3, 32, 3),  # 3 input channels, 32 output channels, 3x3 kernel
-            torch.nn.ReLU(),  # ReLU activation
-            torch.nn.BatchNorm2d(32),  # Batch normalization after convolution
-            torch.nn.MaxPool2d(2, stride=2),  # Max pooling with 2x2 kernel and stride 2
-            torch.nn.Dropout2d(p=0.25),  # Dropout with drop probability of 0.25
+            torch.nn.Conv2d(3, 32, 3),          # 3 input channels, 32 output channels, 3x3 kernel
+            torch.nn.ReLU(),                    # ReLU activation
+            torch.nn.BatchNorm2d(32),           # Batch normalization after convolution
+            torch.nn.MaxPool2d(2, stride=2),    # Max pooling with 2x2 kernel and stride 2
+            torch.nn.Dropout2d(p=0.25),         # Dropout with drop probability of 0.25
 
             torch.nn.Conv2d(32, 64, 3),
             torch.nn.ReLU(),
@@ -44,8 +44,7 @@ class CNNModel(torch.nn.Module):
             torch.nn.Flatten(),
             torch.nn.Linear(512 * 100, 512),  # 100 factor comes from conv layers and 400×400 input image
             torch.nn.ReLU(),
-            torch.nn.Linear(512, 3),
-            torch.nn.Softmax(dim=1)
+            torch.nn.Linear(512, 3)
         )
 
     def forward(self, x):
@@ -62,9 +61,15 @@ device = (
 )
 
 # Create an instance of the CNNModel class
-model = CNNModel().to(device)
+model = CNNModel()
 loss_fn = torch.nn.CrossEntropyLoss()  # Use CrossEntropyLoss as the loss function
 optimizer = None  # set optimizer as None until set_optimizer is called
+lr_scheduler = None  # set lr_scheduler as None until set_optimizer is called
+
+# Load previous model state dictionary
+# model.load_state_dict(torch.load("training_logs/adam dropout lr_scheduler/model[0].pt"))
+
+model.to(device)
 
 
 def callable_once(func):
@@ -81,46 +86,62 @@ def callable_once(func):
 
 @callable_once
 def set_optimizer(lr: float = 0.01):
-    global optimizer
-    optimizer = torch.optim.RMSprop(model.parameters(), lr=lr)
+    global optimizer, lr_scheduler
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    # optimizer.load_state_dict(torch.load("training_logs/adam dropout lr_scheduler/optim[0].pt"))
+    lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, patience=2, verbose=True)
 
 
-def train_loop(dataloader, model, loss_fn, optimizer, lr_scheduler):
+def train_loop(dataloader):
+    global model, loss_fn, optimizer, lr_scheduler
+    model.train()
     size = len(dataloader.dataset)
+    correct = 0
+    validate = 0
     for batch, (X, y) in enumerate(dataloader):
         # GPU optimization
-        X, y = X.to(device), y.to(device)
+        images, labels = X.to(device), y.to(device)
 
         # Compute prediction and loss
-        pred = model(X)
-        loss = loss_fn(pred, y)
+        outputs = model(images)
+        pred = torch.argmax(outputs, dim=1)
+        correct += (pred == labels).type(torch.FloatTensor).sum().item()
+        loss = loss_fn(outputs, labels)
+        validate += loss
 
         # Backpropagation
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        if batch % 50 == 0:
-            loss, current = loss.item(), (batch + 1) * len(X)
-            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
-    # noinspection PyUnboundLocalVariable
-    lr_scheduler.step(loss)
+        if batch % 25 == 0:
+            loss, current = loss.item(), (batch + 1) * len(images)
+            print(f"loss: {loss:>7f}  [{current:>4d}/{size:>4d}]")
+
+    correct /= size
+    print(f"Error in train set: \n Accuracy: {(100 * correct):>0.1f}%")
+
+    validate /= size
+    lr_scheduler.step(validate)
 
 
-def test_loop(dataloader, model, loss_fn):
+def test_loop(dataloader):
+    global model, loss_fn
+    model.eval()
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
     test_loss, correct = 0, 0
 
     with torch.no_grad():
         for X, y in dataloader:
-            X, y = X.to(device), y.to(device)
-            pred = model(X)
-            test_loss += loss_fn(pred, y).item()
-            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+            images, labels = X.to(device), y.to(device)
+            outputs = model(images)
+            pred = torch.argmax(outputs, dim=1)
+            test_loss += loss_fn(outputs, labels).item()
+            correct += (pred == labels).type(torch.FloatTensor).sum().item()
 
     test_loss /= num_batches
     correct /= size
-    print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+    print(f"Error in test set: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
-    return str(correct)
+    return correct

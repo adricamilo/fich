@@ -22,11 +22,9 @@ f = open("pages_log.txt", "w")
 
 for file in file_list:
     f.write(f"Starting file {file_num}/{len(file_list)}..." + file + "\n")
-    # noinspection PyUnresolvedReferences
     with fitz.open(file) as pdf:
         for page in pdf:
             # pix = page.get_pixmap()  # render page to an image
-            # noinspection PyProtectedMember
             # name = os.path.join(image_folder, fich._get_name(page_num, "page", ".png"))
             # pix.save(name)  # store image as a PNG
             f.write(str(page_num) + "\n")

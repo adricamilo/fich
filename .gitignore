@@ -1,6 +1,3 @@
-# Robocopy and rsync stuff
-robolog.txt
-
 # Training and testing databases
 fich_database/
 training_logs/
