@@ -12,9 +12,9 @@ import cnn
 print(f"Using {cnn.device if cnn.device != 'cuda' else 'cuda/ROCm'} device")
 
 # Path to labeled database
-input_folder = os.path.join("fich_database", "inputs_scanned")
+input_folder = os.path.join("fich_database", "inputs_photos")
 
-# Define data augmentation transforms
+# Define transforms
 transform_train = {
     '1': [transforms.Compose([
         transforms.ToTensor(),
@@ -53,7 +53,7 @@ dataloader_test = torch.utils.data.DataLoader(dataset_test, batch_size=32, shuff
 # Hyper parameters
 learning_rate = float(sys.argv[1])
 batch_size = 32
-num_epochs = 25
+num_epochs = 50
 
 cnn.set_optimizer(learning_rate)
 
@@ -70,6 +70,9 @@ for t in range(num_epochs):
 finish = timer()
 print("Done!")
 execution_time = finish - start
+
+minutes = int(execution_time // 60)
+seconds = execution_time % 60
 
 print("Saving model and optimizer states...")
 
@@ -90,7 +93,7 @@ log_file.write(f"input folder = {input_folder} \n")
 log_file.write(f"learning rate = {learning_rate} \n")
 log_file.write(f"transformation = {transform_train[sys.argv[2]][1]} \n")
 log_file.write(f"training set reduction factor = {factor} \n")
-log_file.write(f"time to train = {execution_time // 60} m \n")
+log_file.write(f"time to train = {minutes} m {seconds:>0.01f} s \n")
 for acc in accuracies:
     log_file.write(f"{(100 * acc):>0.1f}% \n")
 log_file.close()

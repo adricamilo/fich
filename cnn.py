@@ -1,5 +1,10 @@
 import torch.nn
 import torch.optim
+import numpy
+from sklearn.metrics import confusion_matrix
+import pandas
+from pandas.core.frame import DataFrame
+from torch.utils.data.dataloader import DataLoader
 
 
 class CNNModel(torch.nn.Module):
@@ -67,7 +72,7 @@ optimizer = None  # set optimizer as None until set_optimizer is called
 lr_scheduler = None  # set lr_scheduler as None until set_optimizer is called
 
 # Load previous model state dictionary
-# model.load_state_dict(torch.load("training_logs/adam dropout lr_scheduler/model[0].pt"))
+# model.load_state_dict(torch.load("training_logs/..."))
 
 model.to(device)
 
@@ -88,13 +93,14 @@ def callable_once(func):
 def set_optimizer(lr: float = 0.01):
     global optimizer, lr_scheduler
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    # optimizer.load_state_dict(torch.load("training_logs/adam dropout lr_scheduler/optim[0].pt"))
+    # optimizer.load_state_dict(torch.load("training_logs/..."))
     lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, patience=2, verbose=True)
 
 
-def train_loop(dataloader):
+def train_loop(dataloader: DataLoader):
     global model, loss_fn, optimizer, lr_scheduler
     model.train()
+    # noinspection PyTypeChecker
     size = len(dataloader.dataset)
     correct = 0
     validate = 0
@@ -125,9 +131,10 @@ def train_loop(dataloader):
     lr_scheduler.step(validate)
 
 
-def test_loop(dataloader):
+def test_loop(dataloader: DataLoader) -> float:
     global model, loss_fn
     model.eval()
+    # noinspection PyTypeChecker
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
     test_loss, correct = 0, 0
@@ -142,6 +149,38 @@ def test_loop(dataloader):
 
     test_loss /= num_batches
     correct /= size
+    print(type(correct))
     print(f"Error in test set: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
     return correct
+
+
+def test_loop_conf_matrix(dataloader: DataLoader) -> tuple[float, DataFrame]:
+    global model
+    model.eval()
+
+    # noinspection PyTypeChecker
+    size = len(dataloader.dataset)
+    correct = 0
+    y_pred = list()
+    y_true = list()
+
+    with torch.no_grad():
+        for X, y in dataloader:
+            images, labels = X.to(device), y.to(device)
+            outputs = model(images)
+            pred = torch.argmax(outputs, dim=1)
+            correct += (pred == labels).type(torch.FloatTensor).sum().item()
+            y_pred.extend(pred.cpu().numpy())
+            y_true.extend(labels.cpu().numpy())
+
+    correct /= size
+
+    classes = ("clockwise", "counterclockwise", "upright")
+
+    print("Building confusion matrix...")
+    conf_matrix = confusion_matrix(y_true, y_pred)
+    df_conf_matrix = pandas.DataFrame(conf_matrix / numpy.sum(conf_matrix, axis=1)[:, None], index=[i for i in classes],
+                                      columns=[i for i in classes])
+    print(type(df_conf_matrix))
+    return correct, df_conf_matrix

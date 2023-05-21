@@ -18,6 +18,8 @@ unidecode = "*"
 pymupdf = "*"
 pypdf = "*"
 jupyter = "*"
+scikit-learn = "*"
+seaborn = "*"
 
 [dev-packages]
 
