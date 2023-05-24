@@ -277,7 +277,5 @@ def wrong_orientations(folder: str) -> list[str]:
     wrong = list()
     for file, correcting in correcting_orientations(folder):
         if correcting != 0:
-            wrong.append(file)
+            wrong.append((file, correcting))
     return wrong
-
-
