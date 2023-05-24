@@ -72,7 +72,7 @@ optimizer = None  # set optimizer as None until set_optimizer is called
 lr_scheduler = None  # set lr_scheduler as None until set_optimizer is called
 
 # Load previous model state dictionary
-# model.load_state_dict(torch.load("training_logs/..."))
+model.load_state_dict(torch.load("models/orientation_model.pt"))
 
 model.to(device)
 
@@ -93,7 +93,7 @@ def callable_once(func):
 def set_optimizer(lr: float = 0.01):
     global optimizer, lr_scheduler
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    # optimizer.load_state_dict(torch.load("training_logs/..."))
+    optimizer.load_state_dict(torch.load("models/orientation_optim.pt"))
     lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.1, patience=2, verbose=True)
 
 
@@ -184,3 +184,24 @@ def test_loop_conf_matrix(dataloader: DataLoader) -> tuple[float, DataFrame]:
                                       columns=[i for i in classes])
     print(type(df_conf_matrix))
     return correct, df_conf_matrix
+
+
+def evaluate(dataloader: DataLoader) -> list:
+    global model
+    model.eval()
+    y_pred = list()
+
+    with torch.no_grad():
+        for X in dataloader:
+            images = X.to(device)
+            outputs = model(images)
+            pred = torch.argmax(outputs, dim=1)
+            y_pred.extend(pred.cpu().numpy())
+
+    deg_to_correct = {
+        0: 270,
+        1: 90,
+        2: 0
+    }
+
+    return [deg_to_correct[label] for label in y_pred]

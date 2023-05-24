@@ -1,6 +1,7 @@
 # Training and testing databases
 fich_database/
 training_logs/
+models/
 
 # MacOS stuff
 .DS_Store

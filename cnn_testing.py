@@ -12,7 +12,7 @@ print(f"Using {cnn.device if cnn.device != 'cuda' else 'cuda/ROCm'} device")
 # Path to testing database
 input_folder = os.path.join("fich_database", "inputs_testing")
 
-# Define data augmentation transforms
+# Define data transforms
 transform_test = transforms.Compose([
         transforms.ToTensor(),
         transforms.Resize((400, 400), antialias=True)

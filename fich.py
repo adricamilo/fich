@@ -12,6 +12,7 @@ from unidecode import unidecode
 import json
 from pypdf import PdfReader, PdfWriter
 import fitz
+import cnn_eval
 
 
 def _is_image(path: str) -> bool:
@@ -266,3 +267,17 @@ def merge_pdfs(paths: list[str], filename: str) -> str:
     _save_name(filename, "merged")
     result.save(filename)
     return filename
+
+
+def correcting_orientations(folder: str) -> list:
+    return cnn_eval.correcting_orientations(folder)
+
+
+def wrong_orientations(folder: str) -> list[str]:
+    wrong = list()
+    for file, correcting in correcting_orientations(folder):
+        if correcting != 0:
+            wrong.append(file)
+    return wrong
+
+
