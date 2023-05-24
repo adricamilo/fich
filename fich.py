@@ -273,7 +273,7 @@ def correcting_orientations(folder: str) -> list:
     return cnn_eval.correcting_orientations(folder)
 
 
-def wrong_orientations(folder: str) -> list[str]:
+def wrong_orientations(folder: str) -> list[tuple]:
     wrong = list()
     for file, correcting in correcting_orientations(folder):
         if correcting != 0:
