@@ -1,6 +1,7 @@
 from collections.abc import Iterable
 import os
 from PIL import Image
+from pillow_heif import register_heif_opener
 import cv2
 import pytesseract
 import tempfile
@@ -14,9 +15,10 @@ from pypdf import PdfReader, PdfWriter
 import fitz
 import cnn_eval
 
+register_heif_opener()
 
 def _is_image(path: str) -> bool:
-    has_image_format = path.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp'))
+    has_image_format = path.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.heic'))
     not_garbage = not os.path.basename(path).startswith("._")
     return has_image_format and not_garbage
 

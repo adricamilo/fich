@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 pytesseract = "*"
 pillow = "*"
+pillow-heif = "*"
 numpy = "*"
 torch = "*"
 torchvision = "*"
