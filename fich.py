@@ -84,7 +84,8 @@ def _save_name(path: str, base: str = "new_file", extension: str = ".pdf") -> st
 def pil_list_to_pdf(images: list[Image.Image], path: str) -> str:
     filename = _save_name(path, "joined")
     images[0].save(filename, "PDF",
-                   save_all=True, append_images=images[1:])
+                   save_all=True, append_images=images[1:],
+                   subsampling=0, quality=100)
     return filename
 
 
@@ -160,7 +161,7 @@ def pil_list_to_ocr(images: list[Image.Image], path: str, language: str = "spa")
     files = []
     for i, image in enumerate(images):
         image_name = os.path.join(temp_dir.name, str(i) + ".tiff")
-        image.save(image_name)
+        image.save(image_name, subsampling=0, quality=100)
         files.append(image_name + "\n")
 
     images_file = os.path.join(temp_dir.name, "images.txt")
