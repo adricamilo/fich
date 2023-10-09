@@ -13,9 +13,10 @@ from unidecode import unidecode
 import json
 from pypdf import PdfReader, PdfWriter
 import fitz
-import cnn_eval
+# import cnn_eval
 
 register_heif_opener()
+
 
 def _is_image(path: str) -> bool:
     has_image_format = path.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.heic'))
@@ -168,6 +169,7 @@ def pil_list_to_ocr(images: list[Image.Image], path: str, language: str = "spa")
     with open(images_file, "w") as f:
         f.writelines(files)
 
+    print("Tesseracting...")
     pdf = pytesseract.image_to_pdf_or_hocr(images_file, extension="pdf",
                                            lang=language)
 
@@ -251,7 +253,7 @@ def rotate_pdf(filename: str, rotations: dict[int, int]) -> str:
         writer.add_page(reader.pages[i])
 
     for page, degrees in rotations.items():
-        writer.pages[page-1].rotate((360 - degrees) % 360)  # degree change to be consistent with PIL
+        writer.pages[page-1].rotate((360 - degrees) % 360)  # degrees changes to be consistent with PIL
 
     with open(filename, "wb") as f:
         writer.write(f)
@@ -272,13 +274,29 @@ def merge_pdfs(paths: list[str], filename: str) -> str:
     return filename
 
 
-def correcting_orientations(folder: str) -> list:
-    return cnn_eval.correcting_orientations(folder)
+# def correcting_orientations(folder: str) -> list:
+#     return cnn_eval.correcting_orientations(folder)
 
 
-def wrong_orientations(folder: str) -> list[tuple]:
-    wrong = list()
-    for file, correcting in correcting_orientations(folder):
-        if correcting != 0:
-            wrong.append((file, correcting))
-    return wrong
+# def wrong_orientations(folder: str) -> list[tuple]:
+#     wrong = list()
+#     for file, correcting in correcting_orientations(folder):
+#         if correcting != 0:
+#             wrong.append((file, correcting))
+#     return wrong
+
+
+def extract_pages(source: str, pages: list[int], destination: str) -> str:
+    reader = PdfReader(source)
+    writer = PdfWriter()
+
+    for i in pages:
+        try:
+            writer.add_page(reader.pages[i-1])
+        except IndexError:
+            print(f"Page {i} is out of range. Source is {len(reader.pages)} pages long.")
+
+    with open(destination, "wb") as f:
+        writer.write(f)
+
+    return destination

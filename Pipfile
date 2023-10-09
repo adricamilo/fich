@@ -19,7 +19,6 @@ pdf2image = "*"
 unidecode = "*"
 pymupdf = "*"
 pypdf = "*"
-jupyter = "*"
 scikit-learn = "*"
 seaborn = "*"
 
