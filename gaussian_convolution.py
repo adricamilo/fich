@@ -5,7 +5,11 @@ from PIL import ImageTk, Image
 from numpy import ndarray
 
 INITIAL_BLOCK_SIZE = 101
+MINIMUM_BLOCK_SIZE = 3
+MAXIMUM_BLOCK_SIZE = 201
 INITIAL_C = 31
+MINIMUM_C = 0
+MAXIMUM_C = 60
 
 image_path = ""
 
@@ -56,8 +60,8 @@ c = tk.IntVar()
 
 block_size_scale = tk.Scale(scales,
                             variable=block_size,
-                            from_=3,
-                            to=201,
+                            from_=MINIMUM_BLOCK_SIZE,
+                            to=MAXIMUM_BLOCK_SIZE,
                             resolution=2,
                             orient=tk.HORIZONTAL,
                             length=400,
@@ -68,8 +72,8 @@ block_size_scale.grid(row=1, column=0)
 
 c_scale = tk.Scale(scales,
                    variable=c,
-                   from_=0,
-                   to=200,
+                   from_=MINIMUM_C,
+                   to=MAXIMUM_C,
                    resolution=1,
                    orient=tk.HORIZONTAL,
                    length=400,
